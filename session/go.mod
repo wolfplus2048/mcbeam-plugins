@@ -6,7 +6,6 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/micro/micro/v3 v3.0.0
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
-	github.com/wolfplus2048/mcbeam-plugins/v3 v3.0.0-20201109132823-6916c32de4fd
 	google.golang.org/protobuf v1.25.0
 )
 
