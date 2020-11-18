@@ -1,7 +1,6 @@
 package apollo
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/micro/micro/v3/service/config"
 	"github.com/micro/micro/v3/service/logger"
@@ -31,14 +30,13 @@ func (c *conf) configure()  {
 	c.client = client
 }
 func (c *conf) Get(path string, options ...config.Option) (config.Value, error) {
-	value, err := c.client.GetConfigCache(c.namespace).Get(path)
-	var data = []byte("{}")
-	b, err := json.Marshal(value)
-	if err != nil {
-		data = b
+
+	config := c.client.GetConfig(c.namespace)
+	if config == nil {
+		return nil, fmt.Errorf("namespace not exists")
 	}
-	ret := config.NewJSONValue(data)
-	return ret, nil
+
+	return newValue(config, path), nil
 
 }
 
@@ -49,7 +47,7 @@ func (c *conf) Set(path string, val interface{}, options ...config.Option) error
 func (c *conf) Delete(path string, options ...config.Option) error {
 	panic("implement me")
 }
-func newConfig(opts ...config.Option) config.Config {
+func NewConfig(opts ...config.Option) config.Config {
 	conf := &conf{}
 	for _, o := range opts {
 		o(&conf.opts)

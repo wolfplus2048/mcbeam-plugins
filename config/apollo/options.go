@@ -8,11 +8,11 @@ import (
 
 type appConfigKey struct{}
 
-func Config(file c.AppConfig) config.Option {
+func WithConfig(apollo *c.AppConfig) config.Option {
 	return func(o *config.Options) {
 		if o.Context == nil {
 			o.Context = context.Background()
 		}
-		o.Context = context.WithValue(o.Context, appConfigKey{}, file)
+		o.Context = context.WithValue(o.Context, appConfigKey{}, apollo)
 	}
 }
