@@ -1,0 +1,71 @@
+syntax="proto3";
+
+package gate;
+//option go_package = "github.com/wolfplus2048/mcbeam/v3/v3/proto;gate";
+
+enum MsgType {
+  MsgRequest = 0;
+  MsgNotify = 1;
+  MsgResponse = 2;
+  MsgPush = 3;
+}
+enum RPCType {
+  Sys = 0;
+  User = 1;
+}
+service McbApp {
+  rpc Call(Request) returns (Response) {}
+}
+
+service McbGate {
+  rpc Push(PushMsg) returns (Response) {}
+  rpc PushSession(Session) returns (Response) {}
+  rpc Bind(Session) returns (Response) {}
+  rpc Kick(KickMsg) returns (KickAnswer) {}
+}
+message Error {
+  string id = 1;
+  int32 code = 2;
+  string detail = 3;
+  string status = 4;
+}
+
+message Session {
+  int64 id = 1;
+  string uid = 2;
+  bytes data = 3;
+}
+message SessionClose {
+  string uid = 1;
+}
+message Msg {
+  uint64 id = 1;
+  string route = 2;
+  bytes data = 3;
+  string reply = 4;
+  MsgType type = 5;
+}
+message KickMsg {
+  string userId = 1;
+}
+
+message KickAnswer {
+  bool kicked = 1;
+}
+message PushMsg {
+  string route = 1;
+  string uid = 2;
+  bytes data = 3;
+}
+
+message Request {
+  RPCType type = 1;
+  Session session = 2;
+  Msg msg = 3;
+  string frontendID = 4;
+  bytes metadata = 5;
+}
+message Response {
+  bytes data = 1;
+  Error error = 2;
+}
