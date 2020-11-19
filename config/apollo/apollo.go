@@ -15,6 +15,8 @@ type conf struct {
 }
 
 func (c *conf) configure()  {
+	agollo.SetLogger(&DefaultLogger{})
+
 	client, err := agollo.StartWithConfig(func() (*agoconfig.AppConfig, error) {
 		var apollo, ok = c.opts.Context.Value(appConfigKey{}).(*agoconfig.AppConfig)
 		if ok {
