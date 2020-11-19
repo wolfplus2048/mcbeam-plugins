@@ -16,7 +16,7 @@ type conf struct {
 
 func (c *conf) configure()  {
 	client, err := agollo.StartWithConfig(func() (*agoconfig.AppConfig, error) {
-		apollo, ok := c.opts.Context.Value(appConfigKey{}).(*agoconfig.AppConfig)
+		var apollo, ok = c.opts.Context.Value(appConfigKey{}).(*agoconfig.AppConfig)
 		if ok {
 			c.namespace = apollo.NamespaceName
 			return apollo, nil
