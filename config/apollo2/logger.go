@@ -1,4 +1,4 @@
-package apollo
+package apollo2
 
 import "github.com/micro/micro/v3/service/logger"
 
