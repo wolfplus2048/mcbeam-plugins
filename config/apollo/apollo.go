@@ -10,6 +10,7 @@ import (
 type apollo struct {
 	opts config.Options
 	client agollo.Client
+	namespace string
 }
 
 func NewConfig(opts ...config.Option) config.Config {
@@ -30,10 +31,15 @@ func (a *apollo) configure() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	if len(config.NameSpaceNames) > 0 {
+		a.namespace = config.NameSpaceNames[0]
+	} else {
+		a.namespace = "application"
+	}
 }
 func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
 	nullValue := config.NewJSONValue([]byte("null"))
-	value := a.client.GetString(path)
+	value := a.client.GetString(path, agollo.WithNamespace(a.namespace))
 	if len(value) > 0 {
 		return config.NewJSONValue([]byte(value)), nil
 	}
