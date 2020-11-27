@@ -1,4 +1,4 @@
-module github.com/wolfplus2048/mcbeam-plugins/config/apollo_bak/v3
+module github.com/wolfplus2048/mcbeam-plugins/config/apollo2/v3
 
 go 1.15
 
