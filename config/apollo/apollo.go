@@ -20,7 +20,7 @@ func NewConfig(opts ...config.Option) config.Config {
 	a.configure()
 	return a
 }
-func (a apollo) configure() {
+func (a *apollo) configure() {
 	config, ok := a.opts.Context.Value(appConfigKey{}).(*agollo.Conf)
 	if !ok {
 		logger.Fatal("load apollo config failed")
@@ -31,7 +31,7 @@ func (a apollo) configure() {
 		logger.Fatal(err)
 	}
 }
-func (a apollo) Get(path string, options ...config.Option) (config.Value, error) {
+func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
 	nullValue := config.NewJSONValue([]byte("null"))
 	value := a.client.GetString(path)
 	if len(value) > 0 {
@@ -40,10 +40,10 @@ func (a apollo) Get(path string, options ...config.Option) (config.Value, error)
 	return nullValue, nil
 }
 
-func (a apollo) Set(path string, val interface{}, options ...config.Option) error {
+func (a *apollo) Set(path string, val interface{}, options ...config.Option) error {
 	panic("implement me")
 }
 
-func (a apollo) Delete(path string, options ...config.Option) error {
+func (a *apollo) Delete(path string, options ...config.Option) error {
 	panic("implement me")
 }
