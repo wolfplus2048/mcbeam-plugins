@@ -1,59 +1,55 @@
 package apollo
 
 import (
-	"fmt"
 	"github.com/micro/micro/v3/service/config"
 	"github.com/micro/micro/v3/service/logger"
-	"github.com/zouyx/agollo/v4"
-	agoconfig "github.com/zouyx/agollo/v4/env/config"
+	agollo "github.com/philchia/agollo/v4"
 )
 
-type conf struct {
+
+type apollo struct {
 	opts config.Options
+	client agollo.Client
 	namespace string
-	client *agollo.Client
 }
 
-func (c *conf) configure()  {
-	agollo.SetLogger(&DefaultLogger{})
-
-	client, err := agollo.StartWithConfig(func() (*agoconfig.AppConfig, error) {
-		var apollo, ok = c.opts.Context.Value(appConfigKey{}).(*agoconfig.AppConfig)
-		if ok {
-			c.namespace = apollo.NamespaceName
-			return apollo, nil
-		}
-		return nil, fmt.Errorf("no apollo config info")
-	})
-
-	if err != nil{
+func NewConfig(opts ...config.Option) config.Config {
+	a := &apollo{}
+	for _, o := range opts {
+		o(&a.opts)
+	}
+	a.configure()
+	return a
+}
+func (a *apollo) configure() {
+	config, ok := a.opts.Context.Value(appConfigKey{}).(*agollo.Conf)
+	if !ok {
+		logger.Fatal("load apollo config failed")
+	}
+	a.client = agollo.NewClient(config)
+	err := a.client.Start()
+	if err != nil {
 		logger.Fatal(err)
 	}
-	c.client = client
-}
-func (c *conf) Get(path string, options ...config.Option) (config.Value, error) {
-
-	config := c.client.GetConfig(c.namespace)
-	if config == nil {
-		return nil, fmt.Errorf("namespace not exists")
+	if len(config.NameSpaceNames) > 0 {
+		a.namespace = config.NameSpaceNames[0]
+	} else {
+		a.namespace = "application"
 	}
-
-	return newValue(config, path), nil
-
+}
+func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
+	nullValue := config.NewJSONValue([]byte("null"))
+	value := a.client.GetString(path, agollo.WithNamespace(a.namespace))
+	if len(value) > 0 {
+		return config.NewJSONValue([]byte(value)), nil
+	}
+	return nullValue, nil
 }
 
-func (c *conf) Set(path string, val interface{}, options ...config.Option) error {
+func (a *apollo) Set(path string, val interface{}, options ...config.Option) error {
 	panic("implement me")
 }
 
-func (c *conf) Delete(path string, options ...config.Option) error {
+func (a *apollo) Delete(path string, options ...config.Option) error {
 	panic("implement me")
-}
-func NewConfig(opts ...config.Option) config.Config {
-	conf := &conf{}
-	for _, o := range opts {
-		o(&conf.opts)
-	}
-	conf.configure()
-	return conf
 }
