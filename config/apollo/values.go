@@ -1,4 +1,4 @@
-package apollo2
+package apollo
 
 import (
 	"encoding/json"

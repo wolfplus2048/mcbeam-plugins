@@ -3,12 +3,12 @@ package apollo2
 import (
 	"context"
 	"github.com/micro/micro/v3/service/config"
-	c "github.com/zouyx/agollo/v4/env/config"
+	agollo "github.com/philchia/agollo/v4"
 )
 
 type appConfigKey struct{}
 
-func WithConfig(apollo *c.AppConfig) config.Option {
+func WithConfig(apollo *agollo.Conf) config.Option {
 	return func(o *config.Options) {
 		if o.Context == nil {
 			o.Context = context.Background()
