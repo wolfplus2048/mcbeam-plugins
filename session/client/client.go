@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"github.com/micro/micro/v3/service/client"
+	"github.com/micro/micro/v3/service/logger"
 	"github.com/wolfplus2048/mcbeam-plugins/session/v3"
 	"github.com/wolfplus2048/mcbeam-plugins/session/v3/codec/proto"
 	pb "github.com/wolfplus2048/mcbeam-plugins/session/v3/proto"
@@ -41,7 +42,8 @@ func (s *srv) Bind(uid string) error {
 		Id:  s.opts.Sid,
 		Uid: s.opts.Uid,
 	}
-	_, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid))
+	rsp, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid))
+	logger.Infof("bind: rsp:%v, err:%v", rsp.Data, err)
 	return err
 }
 func (s *srv) Kick() error {
@@ -64,7 +66,9 @@ func (s *srv) Push(route string, v interface{}) error {
 		Uid:   s.UID(),
 		Data:  b,
 	}
-	_, err = s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid))
+	rsp, err := s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid))
+	logger.Infof("bind: rsp:%v, err:%v", rsp.Data, err)
+
 	return err
 }
 
