@@ -42,7 +42,7 @@ func (s *srv) Bind(uid string) error {
 		Id:  s.opts.Sid,
 		Uid: s.opts.Uid,
 	}
-	rsp, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid))
+	rsp, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 	return err
 }
@@ -50,7 +50,7 @@ func (s *srv) Kick() error {
 	if s.UID() == "" {
 		return session.ErrNoUIDBind
 	}
-	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()}, client.WithServerUid(s.opts.Fid))
+	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()}, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	return err
 }
 func (s *srv) PushSession() error {
@@ -66,7 +66,7 @@ func (s *srv) Push(route string, v interface{}) error {
 		Uid:   s.UID(),
 		Data:  b,
 	}
-	rsp, err := s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid))
+	rsp, err := s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 
 	return err
