@@ -8,4 +8,4 @@ require (
 	github.com/philchia/agollo/v4 v4.0.0
 )
 
-replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.0.0-beta.7.0.20201118150243-47e44f2dcd1f
+replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.0.0-mcbeam.2

@@ -41,14 +41,14 @@ func (s *srv) Bind(uid string) error {
 		Id:  s.opts.Sid,
 		Uid: s.opts.Uid,
 	}
-	_, err := s.gate.Bind(context.Background(), sessionData)
+	_, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid))
 	return err
 }
 func (s *srv) Kick() error {
 	if s.UID() == "" {
 		return session.ErrNoUIDBind
 	}
-	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()})
+	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()}, client.WithServerUid(s.opts.Fid))
 	return err
 }
 func (s *srv) PushSession() error {
@@ -64,14 +64,14 @@ func (s *srv) Push(route string, v interface{}) error {
 		Uid:   s.UID(),
 		Data:  b,
 	}
-	_, err = s.gate.Push(context.Background(), push)
+	_, err = s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid))
 	return err
 }
 
 func NewSession(opts ...session.Option) session.Session {
 	s := &srv{
 		data: make(map[string]interface{}),
-		gate: pb.NewMcbGateService("gate", client.DefaultClient),
+		gate: pb.NewMcbGateService("micro-gate", client.DefaultClient),
 	}
 	for _, o := range opts {
 		o(&s.opts)
