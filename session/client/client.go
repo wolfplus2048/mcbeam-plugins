@@ -43,7 +43,7 @@ func (s *srv) Bind(uid string) error {
 		Uid: s.opts.Uid,
 	}
 	rsp, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid))
-	logger.Infof("bind: rsp:%v, err:%v", rsp.Data, err)
+	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 	return err
 }
 func (s *srv) Kick() error {
@@ -67,7 +67,7 @@ func (s *srv) Push(route string, v interface{}) error {
 		Data:  b,
 	}
 	rsp, err := s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid))
-	logger.Infof("bind: rsp:%v, err:%v", rsp.Data, err)
+	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 
 	return err
 }
