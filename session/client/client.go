@@ -1,8 +1,8 @@
 package client
 
 import (
-	"context"
 	"github.com/micro/micro/v3/service/client"
+	"github.com/micro/micro/v3/service/context"
 	"github.com/micro/micro/v3/service/logger"
 	"github.com/wolfplus2048/mcbeam-plugins/session/v3"
 	"github.com/wolfplus2048/mcbeam-plugins/session/v3/codec/proto"
@@ -10,9 +10,9 @@ import (
 )
 
 type srv struct {
-	opts              session.Options
-	gate              pb.McbGateService
-	data              map[string]interface{}
+	opts session.Options
+	gate pb.McbGateService
+	data map[string]interface{}
 }
 
 func (s *srv) Init(opts ...session.Option) {
@@ -42,7 +42,7 @@ func (s *srv) Bind(uid string) error {
 		Id:  s.opts.Sid,
 		Uid: s.opts.Uid,
 	}
-	rsp, err := s.gate.Bind(context.Background(), sessionData, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
+	rsp, err := s.gate.Bind(context.DefaultContext, sessionData, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 	return err
 }
@@ -50,7 +50,7 @@ func (s *srv) Kick() error {
 	if s.UID() == "" {
 		return session.ErrNoUIDBind
 	}
-	_, err := s.gate.Kick(context.Background(), &pb.KickMsg{UserId: s.UID()}, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
+	_, err := s.gate.Kick(context.DefaultContext, &pb.KickMsg{UserId: s.UID()}, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	return err
 }
 func (s *srv) PushSession() error {
@@ -66,7 +66,7 @@ func (s *srv) Push(route string, v interface{}) error {
 		Uid:   s.UID(),
 		Data:  b,
 	}
-	rsp, err := s.gate.Push(context.Background(), push, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
+	rsp, err := s.gate.Push(context.DefaultContext, push, client.WithServerUid(s.opts.Fid), client.WithAuthToken())
 	logger.Infof("bind: rsp:%v, err:%v", rsp, err)
 
 	return err
