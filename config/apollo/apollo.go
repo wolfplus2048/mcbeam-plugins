@@ -39,11 +39,13 @@ func (a *apollo) configure() {
 }
 func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
 	nullValue := config.NewJSONValue([]byte("null"))
-	value := a.client.GetString(path, agollo.WithNamespace(a.namespace))
-	if len(value) > 0 {
-		return config.NewJSONValue([]byte(value)), nil
+	value := a.client.GetString("content", agollo.WithNamespace(a.namespace))
+
+	if len(value) == 0 {
+		return nullValue, nil
 	}
-	return nullValue, nil
+	cfg := config.NewJSONValues([]byte(value))
+	return cfg.Get(path, options...), nil
 }
 
 func (a *apollo) Set(path string, val interface{}, options ...config.Option) error {
