@@ -1,6 +1,7 @@
 package apollo
 
 import (
+	"github.com/ghodss/yaml"
 	"github.com/micro/micro/v3/service/config"
 	"github.com/micro/micro/v3/service/logger"
 	agollo "github.com/philchia/agollo/v4"
@@ -44,7 +45,11 @@ func (a *apollo) Get(path string, options ...config.Option) (config.Value, error
 	if len(value) == 0 {
 		return nullValue, nil
 	}
-	cfg := config.NewJSONValues([]byte(value))
+	json, err := yaml.YAMLToJSON([]byte(value))
+	if err != nil {
+		return nullValue, nil
+	}
+	cfg := config.NewJSONValues(json)
 	return cfg.Get(path, options...), nil
 }
 
