@@ -7,6 +7,7 @@ import (
 )
 
 type appConfigKey struct{}
+type namesapceKey struct{}
 
 func WithConfig(apollo *agollo.Conf) config.Option {
 	return func(o *config.Options) {
@@ -14,5 +15,14 @@ func WithConfig(apollo *agollo.Conf) config.Option {
 			o.Context = context.Background()
 		}
 		o.Context = context.WithValue(o.Context, appConfigKey{}, apollo)
+	}
+}
+
+func Namespace(ns string) config.Option {
+	return func(o *config.Options) {
+		if o.Context == nil {
+			o.Context = context.Background()
+		}
+		o.Context = context.WithValue(o.Context, namesapceKey{}, ns)
 	}
 }
