@@ -9,4 +9,4 @@ require (
 	google.golang.org/protobuf v1.25.0
 )
 
-replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.0.0-mcbeam.2
+replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam
