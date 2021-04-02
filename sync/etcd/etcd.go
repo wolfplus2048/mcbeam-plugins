@@ -12,9 +12,9 @@ import (
 	gosync "sync"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	cc "github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/micro/micro/v3/service/sync"
+	"go.etcd.io/etcd/clientv3"
+	cc "go.etcd.io/etcd/clientv3/concurrency"
 )
 
 type etcdSync struct {
