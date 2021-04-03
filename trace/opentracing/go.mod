@@ -10,4 +10,4 @@ require (
 	github.com/uber/jaeger-lib v2.4.0+incompatible // indirect
 )
 
-replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.0.0-mcbeam.2
+replace github.com/micro/micro/v3 => github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam
