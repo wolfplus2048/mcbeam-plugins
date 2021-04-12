@@ -1,6 +1,7 @@
 package apollo
 
 import (
+	"context"
 	"github.com/ghodss/yaml"
 	"github.com/micro/micro/v3/service/config"
 	"github.com/micro/micro/v3/service/logger"
@@ -39,7 +40,7 @@ func (a *apollo) configure() {
 	}
 }
 func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
-	opt := config.Options{}
+	opt := config.Options{Context: context.Background()}
 	for _, o := range options{
 		o(&opt)
 	}
