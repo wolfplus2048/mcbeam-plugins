@@ -3,7 +3,7 @@ package redis
 import (
 	"fmt"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	log "github.com/micro/micro/v3/service/logger"
 	"github.com/micro/micro/v3/service/store"
 )
@@ -40,7 +40,7 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 	// TODO suffix
 	if options.Prefix {
 		prefixKey := fmt.Sprintf("%s*", rkey)
-		fkeys, err := r.Client.Keys(prefixKey).Result()
+		fkeys, err := r.Client.Keys(options.Context, prefixKey).Result()
 		if err != nil {
 			return nil, err
 		}
@@ -52,10 +52,16 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 		keys = []string{rkey}
 	}
 
+	if v := options.Context.Value(memberNameKey{}); nil != v {
+		field, ok := v.(string)
+		if !ok {
+			return nil, store.ErrNotFound
+		}
+		return r.readSortedSet(key, field, options)
+	}
 	records := make([]*store.Record, 0, len(keys))
-
 	for _, rkey = range keys {
-		val, err := r.Client.Get(rkey).Bytes()
+		val, err := r.Client.Get(options.Context, rkey).Bytes()
 
 		if err != nil && err == redis.Nil {
 			return nil, store.ErrNotFound
@@ -67,7 +73,7 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 			return nil, store.ErrNotFound
 		}
 
-		d, err := r.Client.TTL(rkey).Result()
+		d, err := r.Client.TTL(options.Context, rkey).Result()
 		if err != nil {
 			return nil, err
 		}
@@ -82,6 +88,45 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 	return records, nil
 }
 
+// sorted set 可以读取到的数据: 1.排名（小->大，大->小） 2.分数
+func (r *rkv) readSortedSet(key string, field string, options store.ReadOptions) ([]*store.Record, error) {
+	records := make([]*store.Record, 0, 1)
+	score, err := r.Client.ZScore(options.Context, key, field).Result()
+	if nil != err {
+		return nil, err
+	}
+	ascSort := true
+	if sort := options.Context.Value(sortTypeKey{}); nil != sort {
+		if b, ok := sort.(bool); ok {
+			ascSort = b
+		}
+	}
+	rank := int64(0)
+	if ascSort {
+		// 升序
+		idx, err := r.Client.ZRank(options.Context, key, field).Result()
+		if nil != err {
+			return nil, err
+		}
+		rank = idx
+	} else {
+		// 倒序
+		idx, err := r.Client.ZRevRank(options.Context, key, field).Result()
+		if nil != err {
+			return nil, err
+		}
+		rank = idx
+	}
+	record := &store.Record{
+		Key:      key,
+		Value:    []byte(field),
+		Metadata: map[string]interface{}{"rank": rank, "score": score},
+		Expiry:   0,
+	}
+	records = append(records, record)
+	return records, nil
+}
+
 func (r *rkv) Delete(key string, opts ...store.DeleteOption) error {
 	options := store.DeleteOptions{}
 	options.Table = r.options.Table
@@ -89,9 +134,24 @@ func (r *rkv) Delete(key string, opts ...store.DeleteOption) error {
 	for _, o := range opts {
 		o(&options)
 	}
-
 	rkey := fmt.Sprintf("%s%s", options.Table, key)
-	return r.Client.Del(rkey).Err()
+
+	if v := options.Context.Value(memberNameKey{}); nil != v {
+		return r.deleteSortedSetMember(rkey, v.(string), options)
+	}
+
+	return r.Client.Del(options.Context, rkey).Err()
+}
+
+func (r *rkv) deleteSortedSetMember(key string, member string, opts store.DeleteOptions) error {
+	return r.Client.ZRem(opts.Context, key, member).Err()
+}
+
+func (r *rkv) writeSortedSet(key string, record *store.Record, score float64, options store.WriteOptions) error {
+	return r.Client.ZAdd(options.Context, key, &redis.Z{
+		Score:  score,
+		Member: record.Value,
+	}).Err()
 }
 
 func (r *rkv) Write(record *store.Record, opts ...store.WriteOption) error {
@@ -101,9 +161,11 @@ func (r *rkv) Write(record *store.Record, opts ...store.WriteOption) error {
 	for _, o := range opts {
 		o(&options)
 	}
-
 	rkey := fmt.Sprintf("%s%s", options.Table, record.Key)
-	return r.Client.Set(rkey, record.Value, record.Expiry).Err()
+	if v := options.Context.Value(memberKey{}); v != nil {
+		return r.writeSortedSet(rkey, record, v.(float64), options)
+	}
+	return r.Client.Set(options.Context, rkey, record.Value, record.Expiry).Err()
 }
 
 func (r *rkv) List(opts ...store.ListOption) ([]string, error) {
@@ -114,12 +176,36 @@ func (r *rkv) List(opts ...store.ListOption) ([]string, error) {
 		o(&options)
 	}
 
-	keys, err := r.Client.Keys("*").Result()
+	if v := options.Context.Value(sortByKey{}); nil != v {
+		return r.listSortedSet(options)
+	}
+
+	keys, err := r.Client.Keys(options.Context, "*").Result()
 	if err != nil {
 		return nil, err
 	}
 
 	return keys, nil
+}
+
+// sorted set list
+func (r *rkv) listSortedSet(options store.ListOptions) ([]string, error) {
+
+	var sort *sortBy
+	if v := options.Context.Value(sortByKey{}); nil != v {
+		if b, ok := v.(*sortBy); ok {
+			sort = b
+		}
+	}
+	var values []string
+	if nil == sort {
+		return values, nil
+	}
+	rkey := fmt.Sprintf("%s%s", options.Table, sort.Key)
+	if sort.Asc {
+		return r.Client.ZRange(options.Context, rkey, sort.Start, sort.End).Result()
+	}
+	return r.Client.ZRevRange(options.Context, rkey, sort.Start, sort.End).Result()
 }
 
 func (r *rkv) Options() store.Options {
@@ -165,6 +251,5 @@ func (r *rkv) configure() error {
 	}
 
 	r.Client = redis.NewClient(redisOptions)
-
 	return nil
 }
