@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/go-redis/redis/v8"
 	log "github.com/micro/micro/v3/service/logger"
@@ -26,7 +28,7 @@ func (r *rkv) Close() error {
 }
 
 func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error) {
-	options := store.ReadOptions{}
+	options := store.ReadOptions{Context: context.Background()}
 	options.Table = r.options.Table
 
 	for _, o := range opts {
@@ -52,13 +54,18 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 		keys = []string{rkey}
 	}
 
-	if v := options.Context.Value(memberNameKey{}); nil != v {
-		field, ok := v.(string)
+	if v := options.Context.Value(readZMemberKey{}); nil != v {
+		field, ok := v.(*readZMember)
 		if !ok {
 			return nil, store.ErrNotFound
 		}
-		return r.readSortedSet(key, field, options)
+		return r.readSortedSet(rkey, field, &options)
+	} else if v := options.Context.Value(readZRangeByIndexKey{}); nil != v {
+		return r.rangeByIndex(rkey, v.(*readZRangeByIndex), &options)
+	} else if v := options.Context.Value(readZRangeWithScoreKey{}); nil != v {
+		return r.rangeByScore(rkey, v.(*redis.ZRangeBy), &options)
 	}
+
 	records := make([]*store.Record, 0, len(keys))
 	for _, rkey = range keys {
 		val, err := r.Client.Get(options.Context, rkey).Bytes()
@@ -88,38 +95,93 @@ func (r *rkv) Read(key string, opts ...store.ReadOption) ([]*store.Record, error
 	return records, nil
 }
 
-// sorted set 可以读取到的数据: 1.排名（小->大，大->小） 2.分数
-func (r *rkv) readSortedSet(key string, field string, options store.ReadOptions) ([]*store.Record, error) {
+func (r *rkv) rangeByIndex(key string, rangeBy *readZRangeByIndex, options *store.ReadOptions) ([]*store.Record, error) {
 	records := make([]*store.Record, 0, 1)
-	score, err := r.Client.ZScore(options.Context, key, field).Result()
+	var err error
+	var members []redis.Z
+	if rangeBy.Asc {
+		members, err = r.Client.ZRangeWithScores(options.Context, key, rangeBy.Start, rangeBy.End).Result()
+	} else {
+		members, err = r.Client.ZRevRangeWithScores(options.Context, key, rangeBy.Start, rangeBy.End).Result()
+	}
 	if nil != err {
 		return nil, err
 	}
-	ascSort := true
-	if sort := options.Context.Value(sortTypeKey{}); nil != sort {
-		if b, ok := sort.(bool); ok {
-			ascSort = b
+	for idx, it := range members {
+		records = append(records, &store.Record{
+			Key:      key,
+			Value:    []byte(it.Member.(string)),
+			Metadata: map[string]interface{}{"rank": int64(idx) + rangeBy.Start, "score": it.Score},
+			Expiry:   0,
+		})
+	}
+
+	return records, nil
+}
+
+func (r *rkv) rangeByScore(key string, rangeBy *redis.ZRangeBy, options *store.ReadOptions) ([]*store.Record, error) {
+	records := make([]*store.Record, 0, 1)
+	var err error
+	var members []redis.Z
+	asc := true
+	if v := options.Context.Value(readZRangeSortKey{}); nil != v {
+		asc = v.(bool)
+	}
+	if asc {
+		members, err = r.Client.ZRangeByScoreWithScores(options.Context, key, rangeBy).Result()
+	} else {
+		members, err = r.Client.ZRevRangeByScoreWithScores(options.Context, key, rangeBy).Result()
+	}
+	if nil != err {
+		return nil, err
+	}
+	min := int64(0)
+	if "-inf" != rangeBy.Min {
+		min, err = strconv.ParseInt(rangeBy.Min, 10, 64)
+		if nil != err {
+			return nil, err
 		}
 	}
+
+	for idx, it := range members {
+		records = append(records, &store.Record{
+			Key:      key,
+			Value:    []byte(it.Member.(string)),
+			Metadata: map[string]interface{}{"rank": int64(idx) + min, "score": it.Score},
+			Expiry:   0,
+		})
+	}
+
+	return records, nil
+}
+
+// sorted set 可以读取到的数据: 1.排名（小->大，大->小） 2.分数
+func (r *rkv) readSortedSet(key string, field *readZMember, options *store.ReadOptions) ([]*store.Record, error) {
+	records := make([]*store.Record, 0, 1)
+	score, err := r.Client.ZScore(options.Context, key, field.Member).Result()
+	if nil != err {
+		return nil, err
+	}
 	rank := int64(0)
-	if ascSort {
+	if field.Asc {
 		// 升序
-		idx, err := r.Client.ZRank(options.Context, key, field).Result()
+		idx, err := r.Client.ZRank(options.Context, key, field.Member).Result()
 		if nil != err {
 			return nil, err
 		}
 		rank = idx
 	} else {
 		// 倒序
-		idx, err := r.Client.ZRevRank(options.Context, key, field).Result()
+		idx, err := r.Client.ZRevRank(options.Context, key, field.Member).Result()
 		if nil != err {
 			return nil, err
 		}
 		rank = idx
 	}
+	log.Debugf("%+v", field)
 	record := &store.Record{
 		Key:      key,
-		Value:    []byte(field),
+		Value:    []byte(field.Member),
 		Metadata: map[string]interface{}{"rank": rank, "score": score},
 		Expiry:   0,
 	}
@@ -128,7 +190,7 @@ func (r *rkv) readSortedSet(key string, field string, options store.ReadOptions)
 }
 
 func (r *rkv) Delete(key string, opts ...store.DeleteOption) error {
-	options := store.DeleteOptions{}
+	options := store.DeleteOptions{Context: context.Background()}
 	options.Table = r.options.Table
 
 	for _, o := range opts {
@@ -136,7 +198,7 @@ func (r *rkv) Delete(key string, opts ...store.DeleteOption) error {
 	}
 	rkey := fmt.Sprintf("%s%s", options.Table, key)
 
-	if v := options.Context.Value(memberNameKey{}); nil != v {
+	if v := options.Context.Value(deleteZMemberKey{}); nil != v {
 		return r.deleteSortedSetMember(rkey, v.(string), options)
 	}
 
@@ -155,29 +217,25 @@ func (r *rkv) writeSortedSet(key string, record *store.Record, score float64, op
 }
 
 func (r *rkv) Write(record *store.Record, opts ...store.WriteOption) error {
-	options := store.WriteOptions{}
+	options := store.WriteOptions{Context: context.Background()}
 	options.Table = r.options.Table
 
 	for _, o := range opts {
 		o(&options)
 	}
 	rkey := fmt.Sprintf("%s%s", options.Table, record.Key)
-	if v := options.Context.Value(memberKey{}); v != nil {
+	if v := options.Context.Value(writeZScoreKey{}); v != nil {
 		return r.writeSortedSet(rkey, record, v.(float64), options)
 	}
 	return r.Client.Set(options.Context, rkey, record.Value, record.Expiry).Err()
 }
 
 func (r *rkv) List(opts ...store.ListOption) ([]string, error) {
-	options := store.ListOptions{}
+	options := store.ListOptions{Context: context.Background()}
 	options.Table = r.options.Table
 
 	for _, o := range opts {
 		o(&options)
-	}
-
-	if v := options.Context.Value(sortByKey{}); nil != v {
-		return r.listSortedSet(options)
 	}
 
 	keys, err := r.Client.Keys(options.Context, "*").Result()
@@ -186,26 +244,6 @@ func (r *rkv) List(opts ...store.ListOption) ([]string, error) {
 	}
 
 	return keys, nil
-}
-
-// sorted set list
-func (r *rkv) listSortedSet(options store.ListOptions) ([]string, error) {
-
-	var sort *sortBy
-	if v := options.Context.Value(sortByKey{}); nil != v {
-		if b, ok := v.(*sortBy); ok {
-			sort = b
-		}
-	}
-	var values []string
-	if nil == sort {
-		return values, nil
-	}
-	rkey := fmt.Sprintf("%s%s", options.Table, sort.Key)
-	if sort.Asc {
-		return r.Client.ZRange(options.Context, rkey, sort.Start, sort.End).Result()
-	}
-	return r.Client.ZRevRange(options.Context, rkey, sort.Start, sort.End).Result()
 }
 
 func (r *rkv) Options() store.Options {

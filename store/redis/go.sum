@@ -579,6 +579,7 @@ github.com/wolfplus2048/mcbeam-plugins/sync/etcd/v3 v3.0.0-20210402084304-ea1cd8
 github.com/wolfplus2048/mcbeam-plugins/trace/opentracing/v3 v3.0.0-20210322080546-8cf269d38a96/go.mod h1:L6O6/2CW9BhqU65YF+6iGvBr28a3+9cPL/GbVU5fweI=
 github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam h1:+MTPbBW4hfw4/aN3UBe4kO/E+rTBAagPHflDEIfiSEg=
 github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam/go.mod h1:1XjtN61o3tVkylyjX5SLJ04zWzONYmpQujstNgHQmO8=
+github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam.0.20210421085145-e980dbeea9d6 h1:byLe3YkgU7w/yzZO5uuPmrZIpIaIbAB5xxM6ubF0alA=
 github.com/wolfplus2048/micro/v3 v3.2.0-mcbeam.0.20210421085145-e980dbeea9d6/go.mod h1:ZQUcAC0WcdvsGSY5kzEhNWwTfehIRfJkEXCAZkoEYS4=
 github.com/xanzy/go-gitlab v0.35.1/go.mod h1:sPLojNBn68fMUWSxIJtdVVIP8uSBYqesTfDUseX11Ug=
 github.com/xanzy/ssh-agent v0.2.1 h1:TCbipTQL2JiiCprBWx9frJ2eJlCYT00NmctrHxVAr70=

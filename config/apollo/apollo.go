@@ -45,8 +45,8 @@ func (a *apollo) Get(path string, options ...config.Option) (config.Value, error
 	}
 	nullValue := config.NewJSONValue([]byte("null"))
 	namespace := a.namespace
-	if ns, ok := opt.Context.Value(namesapceKey{}).(string); ok && len(ns) > 0 {
-		namespace = ns
+	if ns, ok := opt.Context.Value(namesapceKey{}); ok {
+		namespace = ns.(string)
 	}
 	value := a.client.GetString("content", agollo.WithNamespace(namespace))
 
