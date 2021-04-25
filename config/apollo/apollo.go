@@ -7,10 +7,9 @@ import (
 	agollo "github.com/philchia/agollo/v4"
 )
 
-
 type apollo struct {
-	opts config.Options
-	client agollo.Client
+	opts      config.Options
+	client    agollo.Client
 	namespace string
 }
 
@@ -40,12 +39,12 @@ func (a *apollo) configure() {
 }
 func (a *apollo) Get(path string, options ...config.Option) (config.Value, error) {
 	opt := config.Options{}
-	for _, o := range options{
+	for _, o := range options {
 		o(&opt)
 	}
 	nullValue := config.NewJSONValue([]byte("null"))
 	namespace := a.namespace
-	if ns, ok := opt.Context.Value(namesapceKey{}); ok {
+	if ns := opt.Context.Value(namesapceKey{}); nil != ns {
 		namespace = ns.(string)
 	}
 	value := a.client.GetString("content", agollo.WithNamespace(namespace))
