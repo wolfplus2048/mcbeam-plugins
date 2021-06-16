@@ -30,7 +30,8 @@ func (a *apollo) configure() {
 	a.client = agollo.NewClient(config)
 	err := a.client.Start()
 	if err != nil {
-		logger.Fatal(err)
+		//logger.Fatal(err)
+		logger.Error(err)
 	}
 	if len(config.NameSpaceNames) > 0 {
 		a.namespace = config.NameSpaceNames[0]
