@@ -3,7 +3,7 @@ module github.com/wolfplus2048/mcbeam-plugins/store/redis/v3
 go 1.13
 
 require (
-	github.com/go-redis/redis/v8 v8.8.2
+	github.com/go-redis/redis/v8 v8.8.2 // indirect
 	github.com/micro/micro/v3 v3.2.0
 )
 
