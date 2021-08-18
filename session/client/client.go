@@ -30,6 +30,7 @@ func (s *srv) UID() string {
 	return s.opts.Uid
 }
 func (s *srv) Bind(uid string) error {
+	logger.Infof("bind fid:%s, sid:%s, uid:%s", s.opts.Fid, s.opts.Sid, uid)
 	if uid == "" {
 		return session.ErrIllegalUID
 	}
