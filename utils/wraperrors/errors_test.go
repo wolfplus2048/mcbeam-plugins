@@ -6,20 +6,20 @@ import (
 	"testing"
 )
 
-var Err01 = &wrapError{
+var Err01 = &WrapError{
 	Code:   1001,
 	Detail: "test 01",
 }
-var Err02 = &wrapError{
+var Err02 = &WrapError{
 	Code:   1002,
 	Detail: "test 02",
 }
-var Err03 = &wrapError{
+var Err03 = &WrapError{
 	Code:   1003,
 	Detail: "test 03",
 }
 var Err04 = errors.New("raw error")
-var testData = []*wrapError{
+var testData = []*WrapError{
 	Err01,
 	Err02,
 	Err03,
@@ -60,7 +60,7 @@ func TestWrap(t *testing.T) {
 		}
 	}
 
-	var as *wrapError
+	var as *WrapError
 	if !errors.As(got, &as) {
 		t.Fatalf("Expected %v got %v", as, got)
 	} else {
@@ -81,12 +81,29 @@ func TestTrace(t *testing.T) {
 	got = fmt.Errorf("raw %w", got)
 
 	//t.Log(got)
-	var as *wrapError
+	var as *WrapError
 	if !errors.As(got, &as) {
 		t.Fatalf("Expected %v got %v", as, got)
 	}
 
 	if as.Trace() != ne {
 		t.Fatalf("Expected %v got %v", ne, as.Trace())
+	}
+}
+
+func TestErrorf(t *testing.T) {
+	str := Errorf(Err01.Code, "test %02d", 1)
+	if str != Err01.Error() {
+		t.Fatalf("Expected %v got %v", Err01.Error(), str)
+	}
+}
+
+func TestParse(t *testing.T) {
+	werr, err := Parse(Err01.Error())
+	if nil != err {
+		t.Fatal(err)
+	}
+	if werr.Error() != Err01.Error() {
+		t.Fatalf("Expected %v got %v", Err01.Error(), werr.Error())
 	}
 }
