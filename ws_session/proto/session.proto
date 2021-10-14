@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package session;
+
+//option go_package = "github.com/wolfplus2048/mcbeam/v3/plugin/websocket/proto;gate";
+
+service Session {
+  rpc Send(Message) returns (EmptyResponse) {};
+  rpc Kick(KickRequest)returns(EmptyResponse){};
+}
+
+message Message {
+  string sid = 1;
+  string route = 2;
+  bytes body = 3;
+}
+
+message EmptyResponse {}
+
+message KickRequest {
+  string sid = 1;
+}
+
+message SessionClose{
+  string server_id = 1;
+  string session_id = 2;
+}
