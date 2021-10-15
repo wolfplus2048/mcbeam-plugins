@@ -11,8 +11,8 @@ import (
 func SessionHandler() server.HandlerWrapper {
 	return func(h server.HandlerFunc) server.HandlerFunc {
 		return func(ctx context.Context, req server.Request, rsp interface{}) error {
-			sessionID, sok := metadata.Get(ctx, "Micro-SessionID")
-			serverID, fok := metadata.Get(ctx, "Micro-ServerID")
+			sessionID, sok := metadata.Get(ctx, "micro-ws-session-id")
+			serverID, fok := metadata.Get(ctx, "micro-ws-server-id")
 			if !sok || !fok{
 				return h(ctx, req, rsp)
 			}
