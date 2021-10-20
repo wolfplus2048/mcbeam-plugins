@@ -15,6 +15,7 @@ type Session interface {
 	Init(opts ...Option)
 	Options() Options
 	Send(route string, v interface{}) error
+	Bind(status map[string]string) error
 	Kick() error
 	String() string
 }

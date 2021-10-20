@@ -28,6 +28,13 @@ func (s *srv) String() string {
 func (s *srv) SessionID() string {
 	return s.opts.SessionID
 }
+func (s *srv) Bind(status map[string]string) error {
+	_, err := s.session.Bind(context.DefaultContext, &pb.SessionStatus{Status: status}, client.WithServerUid(s.opts.ServerID), client.WithAuthToken())
+	if err != nil {
+		logger.Infof("session bind status, err:%v", err)
+	}
+	return err
+}
 
 func (s *srv) Kick() error {
 	_, err := s.session.Kick(context.DefaultContext, &pb.KickRequest{Sid: s.opts.SessionID}, client.WithServerUid(s.opts.ServerID), client.WithAuthToken())
