@@ -29,7 +29,7 @@ func (s *srv) SessionID() string {
 	return s.opts.SessionID
 }
 func (s *srv) Bind(status map[string]string) error {
-	_, err := s.session.Bind(context.DefaultContext, &pb.SessionStatus{Status: status}, client.WithServerUid(s.opts.ServerID), client.WithAuthToken())
+	_, err := s.session.Bind(context.DefaultContext, &pb.SessionStatus{Sid: s.opts.SessionID, Status: status}, client.WithServerUid(s.opts.ServerID), client.WithAuthToken())
 	if err != nil {
 		logger.Infof("session bind status, err:%v", err)
 	}
