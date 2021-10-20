@@ -11,7 +11,8 @@ service Session {
 }
 
 message SessionStatus {
-  map<string, string> status = 1;
+  string sid = 1;
+  map<string, string> status = 2;
 }
 message Message {
   string sid = 1;
