@@ -7,8 +7,12 @@ package session;
 service Session {
   rpc Send(Message) returns (EmptyResponse) {};
   rpc Kick(KickRequest)returns(EmptyResponse){};
+  rpc Bind(SessionStatus)returns(EmptyResponse){};
 }
 
+message SessionStatus {
+  map<string, string> status = 1;
+}
 message Message {
   string sid = 1;
   string route = 2;

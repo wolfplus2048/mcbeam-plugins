@@ -44,6 +44,7 @@ func NewSessionEndpoints() []*api.Endpoint {
 type SessionService interface {
 	Send(ctx context.Context, in *Message, opts ...client.CallOption) (*EmptyResponse, error)
 	Kick(ctx context.Context, in *KickRequest, opts ...client.CallOption) (*EmptyResponse, error)
+	Bind(ctx context.Context, in *SessionStatus, opts ...client.CallOption) (*EmptyResponse, error)
 }
 
 type sessionService struct {
@@ -78,17 +79,29 @@ func (c *sessionService) Kick(ctx context.Context, in *KickRequest, opts ...clie
 	return out, nil
 }
 
+func (c *sessionService) Bind(ctx context.Context, in *SessionStatus, opts ...client.CallOption) (*EmptyResponse, error) {
+	req := c.c.NewRequest(c.name, "Session.Bind", in)
+	out := new(EmptyResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Session service
 
 type SessionHandler interface {
 	Send(context.Context, *Message, *EmptyResponse) error
 	Kick(context.Context, *KickRequest, *EmptyResponse) error
+	Bind(context.Context, *SessionStatus, *EmptyResponse) error
 }
 
 func RegisterSessionHandler(s server.Server, hdlr SessionHandler, opts ...server.HandlerOption) error {
 	type session interface {
 		Send(ctx context.Context, in *Message, out *EmptyResponse) error
 		Kick(ctx context.Context, in *KickRequest, out *EmptyResponse) error
+		Bind(ctx context.Context, in *SessionStatus, out *EmptyResponse) error
 	}
 	type Session struct {
 		session
@@ -107,4 +120,8 @@ func (h *sessionHandler) Send(ctx context.Context, in *Message, out *EmptyRespon
 
 func (h *sessionHandler) Kick(ctx context.Context, in *KickRequest, out *EmptyResponse) error {
 	return h.SessionHandler.Kick(ctx, in, out)
+}
+
+func (h *sessionHandler) Bind(ctx context.Context, in *SessionStatus, out *EmptyResponse) error {
+	return h.SessionHandler.Bind(ctx, in, out)
 }
